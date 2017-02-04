@@ -1,0 +1,144 @@
+Appendix - Vega-Lite BNF Grammar
+
+Notes:
+- The following productions are assumed to exist already: tuple, string, boolean, number, expression, event-selector
+- Appending "[]" to a production indicates an array.
+- Terminals wrapped in quotation marks indicate enumerated values.
+
+value := string | number | boolean
+
+%% VIEW ALGEBRA %%
+
+view := unit
+  | layer(unit[], view-resolve)
+  | hconcat(view[], view-resolve)
+  | vconcat(view[], view-resolve)
+  | facet(channel, field, scale, axis, view, view-resolve)
+  | repeat(channel, value[], scale, axis, view, view-resolve)
+
+view-resolve := ∅ | resolution[]
+resolution := (channel, res-type, boolean)
+res-type := "scale" | "guide"
+
+
+%% UNIT SPECIFICATION %%
+
+unit := (data, transforms, mark-type, encodings, selections)
+
+data := tuple[]
+  | (url, format-type)
+
+format-type := "json" | "csv" | "tsv"
+
+transforms := ∅ | transform[]
+
+transform := filterNull(boolean)
+  | calculate(formula[])
+  | filter(expression)
+  | filterWith(sel-name)
+
+formula := (string, expression)
+
+mark-type := "bar" | "line" | "area" | "text" | "rule" | "point" | "tick"
+
+
+%% ENCODING RULES %%
+
+encodings := encoding[]
+
+encoding := (channel, rule)
+
+channel := "x" | "y" | "color" | "shape" | "size" | "text" | "detail" | "order" | "path"
+
+rule := field
+  | if-clause[]
+
+if-clause := (sel-name, field)
+
+
+%% DATA FIELDS %%
+
+field := (field-name, data-type, function, scale, guide)
+  | (value, data-type, functions, scale, guide)
+
+field-name := string
+
+data-type := "nominal" | "ordinal" | "quantitative" | "temporal"
+
+function := "bin" | "mean" | "average" | "min" | "max" | "sum" | "product" | ...
+
+
+%% SCALES AND GUIDES %%
+
+scale := (scale-type, scale-domain, scale-range, round, clamp, exponent, nice, zero)
+
+scale-type := "linear" | "ordinal" | "log" | "pow" | "sqrt" | "quantile" | "quantize" | "threshold" | "time"
+
+scale-domain := value[]
+
+scale-range := string | value[]
+
+round := boolean
+exponent := number
+nice := boolean
+zero := boolean
+
+guide := axis | legend
+
+axis := (axis-layer, axis-offset, axis-orient, axis-grid, labels, ticks, title)
+legend := (legend-orient, title-text, format, short-time, value[])
+
+axis-layer := "front" | "back"
+axis-offset := number
+axis-orient := "top" | "bottom" | "left" | "right"
+axis-grid := boolean
+legend-orient := "left" | "right"
+
+labels := (show, format, angle, max-length, short-time)
+show := boolean
+format := string
+angle := number
+max-length := number
+short-time := boolean
+
+ticks := (subdivide, count, padding, tickSize, size-major, size-minor, size-end, value[])
+subdivide := number
+count := number
+padding := number
+tick-size := number
+size-major := number
+size-minor := number
+size-end := number
+
+title := (title-text, offset, max-length, character-width)
+title-text := string
+character-width := number
+
+
+%% INTERACTIVE SELECTIONS %%
+
+selections := ∅ | selection[]
+
+selection := (sel-name, sel-type, predicate, domain-range, event, sel-init, sel-transforms, sel-resolve)
+
+sel-name := string
+
+sel-type := "point" | "list" | "interval"
+
+predicate := expression
+
+domain-range := "domain" | "range"
+
+event := event-selector
+
+sel-init := scales | tuple | tuple[]
+
+sel-transforms := ∅ | sel-transform[]
+
+sel-transform := project(fields, channels)
+  | toggle(event)
+  | translate(events, number)
+  | zoom(event, number)
+  | nearest()
+
+sel-resolve := "single" | "independent" | "union" | "intersect" | "union_others" | "intersect_others"
